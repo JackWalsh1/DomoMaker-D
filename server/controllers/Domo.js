@@ -2,12 +2,14 @@ const models = require('../models');
 
 const { Domo } = models;
 
-const makerPage = async (req, res) => {
+const makerPage = (req, res) => res.render('app');
+
+const getDomos = async (req, res) => {
   try {
     const query = { owner: req.session.account._id };
     const docs = await Domo.find(query).select('name age').lean().exec();
 
-    return res.render('app', { domos: docs });
+    return res.json({ domos: docs });
   } catch (err) {
     console.log(err);
     return res.status(500).json({ error: 'Error retreiving Domos!' });
@@ -17,9 +19,7 @@ const makerPage = async (req, res) => {
 const makeDomo = async (req, res) => {
   if (!req.body.name || !req.body.age) {
     return res.status(400).json({ error: 'Both age / name are required!' });
-  } if (Number.isNaN(req.body.age)) {
-    return res.status(400).json({ error: 'Age must be a number!' });
-  }
+  } 
 
   const domoData = {
     name: req.body.name,
@@ -29,8 +29,8 @@ const makeDomo = async (req, res) => {
 
   try {
     const newDomo = new Domo(domoData);
-    newDomo.save();
-    return res.json({ redirect: '/maker' });
+    await newDomo.save();
+    return res.status(201).json({name: newDomo.name, age: newDomo.age});
   } catch (err) {
     console.log(err);
     // 11000 = Mongo’s “duplicate entry” error)
@@ -43,5 +43,6 @@ const makeDomo = async (req, res) => {
 
 module.exports = {
   makerPage,
+  getDomos,
   makeDomo,
 };
